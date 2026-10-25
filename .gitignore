@@ -1,0 +1,8 @@
+node_modules/
+dist/
+__pycache__/
+.venv/
+backend/data/
+backend/uploads/*
+backend/venv/
+!backend/uploads/.gitkeep
