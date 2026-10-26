@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -13,14 +13,17 @@ def utcnow() -> datetime:
 class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String(32, collation="NOCASE"), unique=True, index=True)
+    username: Mapped[str] = mapped_column(String(32).with_variant(String(32, collation="NOCASE"), "sqlite"), unique=True, index=True)
     password_hash: Mapped[str] = mapped_column(String(100))
     full_name: Mapped[str] = mapped_column(String(100), default="")
     email: Mapped[str] = mapped_column(String(150), default="")
     role: Mapped[str] = mapped_column(String(10), default="user")
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
-    __table_args__ = (CheckConstraint("role IN ('user','admin')"),)
+    __table_args__ = (
+        CheckConstraint("role IN ('user','admin')"),
+        Index("ix_users_username_lower", func.lower(username), unique=True),
+    )
 
 
 class Group(Base):

@@ -3,10 +3,11 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from .config import DATABASE_URL
 
-is_sqlite = DATABASE_URL.startswith("sqlite")
+is_sqlite = DATABASE_URL.get_backend_name() == "sqlite"
 engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False} if is_sqlite else {},
+    pool_pre_ping=True,
 )
 
 if is_sqlite:

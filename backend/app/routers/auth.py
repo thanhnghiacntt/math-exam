@@ -1,7 +1,7 @@
 import time
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from ..config import ALLOW_REGISTER
@@ -42,7 +42,7 @@ def register(body: RegisterIn, db: Session = Depends(get_db)):
         raise HTTPException(400, "Mật khẩu tối thiểu 6 ký tự")
     if not full_name:
         raise HTTPException(400, "Vui lòng nhập họ tên")
-    if db.scalar(select(User.id).where(User.username == username)):
+    if db.scalar(select(User.id).where(func.lower(User.username) == username.lower())):
         raise HTTPException(409, "Tên đăng nhập đã tồn tại")
     u = User(username=username, password_hash=hash_password(body.password),
              full_name=full_name, email=body.email.strip()[:150])
@@ -57,7 +57,7 @@ def login(body: LoginIn, request: Request, db: Session = Depends(get_db)):
     key = f"{request.client.host if request.client else ''}|{username.lower()}"
     if _too_many(key):
         raise HTTPException(429, "Sai quá nhiều lần, thử lại sau 15 phút")
-    u = db.scalar(select(User).where(User.username == username))
+    u = db.scalar(select(User).where(func.lower(User.username) == username.lower()))
     if not u or not verify_password(body.password, u.password_hash):
         _mark_fail(key)
         raise HTTPException(401, "Sai tên đăng nhập hoặc mật khẩu")

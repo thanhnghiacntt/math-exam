@@ -60,7 +60,7 @@ def create_user(body: AdminUserCreate, _: User = Depends(admin_user), db: Sessio
         raise HTTPException(400, "Mật khẩu tối thiểu 6 ký tự")
     if not full_name:
         raise HTTPException(400, "Vui lòng nhập họ tên")
-    if db.scalar(select(User.id).where(User.username == username)):
+    if db.scalar(select(User.id).where(func.lower(User.username) == username.lower())):
         raise HTTPException(409, "Tên đăng nhập đã tồn tại")
     u = User(username=username, password_hash=hash_password(body.password), full_name=full_name,
              email=body.email.strip()[:150], role=body.role)
@@ -234,7 +234,7 @@ def bulk_decide(body: BulkIn, me: User = Depends(admin_user), db: Session = Depe
 def add_member(group_id: int, body: AddMemberIn, me: User = Depends(admin_user), db: Session = Depends(get_db)):
     if not db.get(Group, group_id):
         raise HTTPException(404, "Không tìm thấy nhóm/lớp")
-    u = db.scalar(select(User).where(User.username == body.username.strip()))
+    u = db.scalar(select(User).where(func.lower(User.username) == body.username.strip().lower()))
     if not u:
         raise HTTPException(404, "Không tìm thấy user")
     m = db.get(GroupMember, (group_id, u.id)) or GroupMember(group_id=group_id, user_id=u.id)
